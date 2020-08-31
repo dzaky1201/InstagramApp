@@ -7,8 +7,12 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.dzakyhdr.instagran.AccountSettingActivity
 import com.dzakyhdr.instagran.R
+import com.dzakyhdr.instagran.adapter.MyImagesAdapter
+import com.dzakyhdr.instagran.model.Post
 import com.dzakyhdr.instagran.model.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -18,12 +22,17 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.fragment_profile.view.*
+import java.util.*
+import kotlin.collections.ArrayList
 
 
 class ProfileFragment : Fragment() {
 
     private lateinit var profileId: String
     private lateinit var firebaseUser: FirebaseUser
+
+    var postListGrid: MutableList<Post>? = null
+    var myImagesAdapter: MyImagesAdapter? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -33,6 +42,16 @@ class ProfileFragment : Fragment() {
         val viewProfile =  inflater.inflate(R.layout.fragment_profile, container, false)
 
         firebaseUser = FirebaseAuth.getInstance().currentUser!!
+
+        var recyclerViewUploadImages: RecyclerView? = null
+        recyclerViewUploadImages = viewProfile.findViewById(R.id.recycler_upload_picimage)
+        recyclerViewUploadImages?.setHasFixedSize(true)
+        var linearLayoutManager = GridLayoutManager(context, 3)
+        recyclerViewUploadImages?.layoutManager = linearLayoutManager
+
+        postListGrid = ArrayList()
+        myImagesAdapter = context?.let { MyImagesAdapter(it, postListGrid as ArrayList<Post>) }
+        recyclerViewUploadImages?.adapter = myImagesAdapter
 
         val pref = context?.getSharedPreferences("PREFS", Context.MODE_PRIVATE)
         if (pref != null){
@@ -87,7 +106,33 @@ class ProfileFragment : Fragment() {
         getFollowers()
         getFollowings()
         userInfo()
+        myPost()
         return viewProfile
+    }
+
+    private fun myPost() {
+        val postRef = FirebaseDatabase.getInstance().reference.child("Posts")
+        postRef.addValueEventListener(object : ValueEventListener{
+            override fun onCancelled(p0: DatabaseError) {
+
+            }
+
+            override fun onDataChange(p0: DataSnapshot) {
+                if (p0.exists()){
+                    (postListGrid as ArrayList<Post>).clear()
+
+                    for (snapshot in p0.children){
+                        val post = snapshot.getValue(Post::class.java)
+                        if (post?.getPublisher().equals(profileId)){
+                            (postListGrid as ArrayList<Post>).add(post!!)
+                        }
+
+                        Collections.reverse(postListGrid)
+                        myImagesAdapter!!.notifyDataSetChanged()
+                    }
+                }
+            }
+        })
     }
 
     private fun userInfo() {

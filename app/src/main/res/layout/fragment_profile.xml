@@ -218,9 +218,17 @@
                     android:src="@drawable/save_large_icon"
                     android:layout_weight="1"
                     style="?android:attr/buttonBarButtonStyle"/>
-
             </LinearLayout>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_upload_picimage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
 
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_save_picimage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone"/>
         </LinearLayout>
 
     </ScrollView>
